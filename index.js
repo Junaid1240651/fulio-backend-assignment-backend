@@ -24,9 +24,7 @@ app.post("/checkCompanyInfo", async function (req, res) {
     const result = await SavedData.find({ websideName: inputWebLink }).exec();
     if (result.length > 0) {
       res.json(result);
-    } else {
-      res.json("No Result Found");
-    }
+    } 
   } catch (error) {
     res.status(500).send("Internal Server Error");
   }
