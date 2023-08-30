@@ -2,11 +2,12 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 var cors = require("cors");
-require("dotenv").config();
 var bodyParser = require("body-parser");
+require("dotenv").config();
 
 app.use(cors());
-const ChartData = require("./mongoDB/ChartData");
+const InputNumberSchema = require("./mongoDB/inputNumberSchema");
+const SavedData = require("./mongoDB/savedData");
 app.use(express.json());
 app.use(bodyParser.json());
 
@@ -17,70 +18,49 @@ mongoose
   })
   .then(() => console.log("Connected!"));
 
-app.get("/", async (req, res) => {
+app.post("/checkCompanyInfo", async function (req, res) {
   try {
-    const {
-      endYear,
-      topics,
-      sector,
-      region,
-      pest,
-      source,
-      // swot,
-      country,
-      // city,
-      limit,
-    } = req.query;
-
-    let query = ChartData.find({});
-
-    if (endYear) {
-      query = query.where("end_year").equals(parseInt(endYear));
+    const inputWebLink = req.body.inputWebLink;
+    const result = await SavedData.find({ websideName: inputWebLink }).exec();
+    if (result.length > 0) {
+      res.json(result);
+    } else {
+      res.json("No Result Found");
     }
-
-    if (topics) {
-      const topicsArray = topics.split(",");
-      query = query.where("topic").in(topicsArray);
-    }
-
-    if (sector) {
-      query = query.where("sector").equals(sector);
-    }
-
-    if (region) {
-      query = query.where("region").equals(region);
-    }
-
-    if (pest) {
-      query = query.where("pestle").equals(pest);
-    }
-
-    if (source) {
-      query = query.where("source").equals(source);
-    }
-
-    // if (swot) {
-    //   query = query.where("swot").equals(swot);
-    // }
-
-    if (country) {
-      query = query.where("country").equals(country);
-    }
-
-    // if (city) {
-    //   query = query.where("city").equals(city);
-    // }
-
-    if (limit) {
-      query = query.limit(parseInt(limit));
-    }
-
-    const result = await query.exec();
-    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ error: "Error retrieving data" });
+    res.status(500).send("Internal Server Error");
   }
 });
+app.post("/checkNumberValidation", async function (req, res) {
+  try {
+    const inputNumber = req.body.inputNumber;
+
+    const isValid =
+      /^(?:\+?1\s*-?)?(?:\(\d{3}\)|\d{3})(?:\s*[-.]?\s*)\d{3}(?:\s*[-.]?\s*)\d{4}$/.test(
+        inputNumber
+      );
+    const responseMessage = isValid
+      ? `The contact number ${inputNumber} is valid.`
+      : `The contact number ${inputNumber} is invalid.`;
+
+    res.send(responseMessage);
+  } catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
+});
+// app.post("/save", async function (req, res) {
+//   SavedData.create({
+//     websideName: "https://ful.io",
+
+//     socialLink: [
+//       { websideLink: "https://www.facebook.com/fulioTech/" },
+//       { linkeinLink: "https://www.linkedin.com/company/ful-io/" },
+//     ],
+//     email: "support@ful.io",
+//     contact: "+1 343 303 6668",
+//   });
+//   res.status(201).json(SavedData);
+// });
 
 app.listen(3000, () => {
   console.log("connected");
